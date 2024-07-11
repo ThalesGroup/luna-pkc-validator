@@ -1,44 +1,90 @@
-# Thales Open Source Template Project
+# Luna PKC Validator
 
-Template for creating a new project in the [Thales GitHub organization](https://github.com/ThalesGroup).
+This project is part of the [Luna General Purpose HSMs](https://cpl.thalesgroup.com/encryption/hardware-security-modules/general-purpose-hsms) products suite, and more specifically of the [Luna Network HSM](https://cpl.thalesgroup.com/encryption/hardware-security-modules/network-hsms) product. 
 
-Each Thales OSS project repository **MUST** contain the following files at the root:
+## Introduction
 
-- a `LICENSE` which has been chosen in accordance with legal department depending on your needs
+This standalone Java application validates a PKC certificate chain built by a Luna Network HSM:
 
-- a `README.md` outlining the project goals, sponsoring sig, and community contact information, [GitHub tips about README.md](https://docs.github.com/en/github/creating-cloning-and-archiving-repositories/about-readmes)
+- It checks the certificate chain against the provided root CA from the trusted source.
 
-- a `CONTRIBUTING.md` outlining how to contribute to the project, how to submit a pull request and an issue
+- It checks that any provided Certificate Signing Request (CSR) matches the leaf certificate of the PKC chain.
 
-- a `SECURITY.md` outlining how the security concerns are handled, [GitHub tips about SECURITY.md](https://docs.github.com/en/github/managing-security-vulnerabilities/adding-a-security-policy-to-your-repository)
+The Luna root certificate can be retrieved [here](https://thalesdocs.com/gphsm/luna/7/docs/network/Content/admin_partition/confirm/confirm_hsm.htm).
 
-Below is an example of the common structure and information expected in a README.
+Luna PKCs can be retrieved using the [CMU](https://www.thalesdocs.com/gphsm/luna/7/docs/network/Content/Utilities/cmu/cmu.htm) utility, using
+- The [Luna Universal Client](https://thalesdocs.com/gphsm/luna/7/docs/network/Content/Utilities/Preface.htm), and esp.
+  - The [Luna Shell (Lush)](https://thalesdocs.com/gphsm/luna/7/docs/network/Content/lunash/Preface.htm)
+  - The [Luna client management tool (LunaCM)](https://thalesdocs.com/gphsm/luna/7/docs/network/Content/lunacm/Preface.htm)
+- An existing initialized partition
+  - See [here for the creation of the partition (on the appliance)](https://thalesdocs.com/gphsm/luna/7/docs/network/Content/lunacm/commands/partition/partition_create.htm))
+  - See [here for the initialization of the partition (on the appliance)](https://thalesdocs.com/gphsm/luna/7/docs/network/Content/lunash/commands/partition/partition_init.htm)
+  - See [here for the initialization of the "Crypto Officer" role (on the client end)](https://thalesdocs.com/gphsm/luna/7/docs/network/Content/lunacm/commands/role/role_init.htm)
+- The "Crypto Officer" role password.
+- An handle to a private signing key within this partition, as provided when using the following kind of command (to be run on the client end, as an administrator/root user):
+```
+cmu generateKeyPair -mech=pkcs -modulusBits=2048 -publicExp=65537
+```
 
-**Please keep this structure as is and only fill the content for each section according to your project.**
+On the client end, as an administrator/root user:
 
-If you need assistance or have question, please contact oss@thalesgroup.com
+```
+cmu getpkc
+```
 
-## Get started
+Client certificate requests can be generated on the client end, as an administrator/root user, using the following kind of command:
 
-XXX project purpose it to ...
+```
+vtl createCSR -n 192.168.10.12
+```
 
-**Please also add the description into the About section (Description field)**
+## Build
 
-## Documentation
+Using Maven, with your own development environment including a JDK (11+) and Maven:
 
-Documentation is available at [xxx/docs](https://xxx/docs/).
+```
+mvn clean compile assembly:single
+```
 
-You can use [GitHub pages](https://guides.github.com/features/pages/) to create your documentation.
+Using Podman:
 
-See an example here : https://github.com/ThalesGroup/ThalesGroup.github.io
+```
+./build-with-podman.sh
+```
 
-**Please also add the documentation URL into the About section (Website field)**
+Results are produced in the "target" directory.
+
+The "luna-pkc-validator-1.0.0-jar-with-dependencies.jar" JAR  file is a self-sufficient Java archive that contains the validation function and the required dependencies (esp. the BouncyCastle library).
+
+## Run
+
+Refer to the usage documentation provided by the tool (running it without any parameter).
+
+```
+java -jar luna-pkc-validator.jar --pkc <pkc-file> {--ca <ca-file> | --req <req-file>}");
+  --pkc  the PKC chain file to check.
+  --ca   the Thales HSM Root CA file.
+  --req  the Certificate Signing Request file.
+```
+
+## Test
+
+Once the Luna root certificate (e.g. "safenet-root.pem") and a PKC file have been retrieved (e.g. "pkc.p7b"), the PKC can be checked with the following command:
+
+```
+java -jar target/luna-pkc-validator-1.0.0-jar-with-dependencies.jar --pkc ./pkc.p7b --ca ./safenet-root.pem
+```
+
+A client certificate request (e.g. "192.168.10.12CSR.pem") can be checked with the following command:
+
+```
+java -jar target/luna-pkc-validator-1.0.0-jar-with-dependencies.jar --pkc ./pkc.p7b --req ./192.168.10.12CSR.pem
+```
 
 ## Contributing
 
-If you are interested in contributing to the XXX project, start by reading the [Contributing guide](/CONTRIBUTING.md).
+If you are interested in contributing to this project, please read the [Contributing guide](CONTRIBUTING.md).
 
 ## License
 
-The chosen license in accordance with legal department must be defined into an explicit [LICENSE](https://github.com/ThalesGroup/template-project/blob/master/LICENSE) file at the root of the repository
-You can also link this file in this README section.
+This software is provided under a [permissive license](LICENSE).

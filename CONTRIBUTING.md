@@ -1,30 +1,28 @@
-Describe in this file:
+# Contributing Guidelines
 
-- team organization, roles, communication
-- the rules to be respected by your future contributors
+Contributions of any kind are warmly welcomed.
 
-# Contributing guidelines
+You can contribute with reviews, fixes, improvements, optimizations, enhancements, validation tasks, documentation (usage, design, methodology...), tooling...
+
+Suggested contributions:
+
+- Enhance the documentation.
 
 ## Team organization
 
-### Roles
+- [Tnomogna](https://github.com/tnomogna): Code Owner and Development Lead
 
-## How to become a contributor
+## How To Contribute
 
-### Contributor License Agreements
+For any contribution to this project, you should:
 
-### Contributing code
+- Submit an issue describing your proposed contribution
+- Wait for a feedback from the code owner and agree with him on the "what" and "how" to produce it
+- Fork the repository, develop, test, review and santize your contribution
+- Submit a pull request to have your contribution validated, integrated in the main branch and published.
 
-## Pull Request Checklist
+Contributions must comply with a few good practices and common-sense rules to keep the code as readable and maintainable as possible.
 
-### License
+The design and implementation can be challenged and modified, but with performances, efficiency and code quality in mind.
 
-### Coding style
-
-### Testing
-
-#### Running sanity check
-
-#### Running unit tests
-
-### Issues management
+The existing code style and coding rules must be followed when fixing, modifying the existing code base.
