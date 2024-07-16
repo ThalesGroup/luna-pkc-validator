@@ -14,28 +14,34 @@ The Luna root certificate can be retrieved [here](https://thalesdocs.com/gphsm/l
 
 Luna PKCs can be retrieved using the [CMU](https://www.thalesdocs.com/gphsm/luna/7/docs/network/Content/Utilities/cmu/cmu.htm) utility, using
 - The [Luna Universal Client](https://thalesdocs.com/gphsm/luna/7/docs/network/Content/Utilities/Preface.htm), and esp.
+
   - The [Luna Shell (Lush)](https://thalesdocs.com/gphsm/luna/7/docs/network/Content/lunash/Preface.htm)
+
   - The [Luna client management tool (LunaCM)](https://thalesdocs.com/gphsm/luna/7/docs/network/Content/lunacm/Preface.htm)
+
 - An existing initialized partition
   - See [here for the creation of the partition (on the appliance)](https://thalesdocs.com/gphsm/luna/7/docs/network/Content/lunacm/commands/partition/partition_create.htm))
   - See [here for the initialization of the partition (on the appliance)](https://thalesdocs.com/gphsm/luna/7/docs/network/Content/lunash/commands/partition/partition_init.htm)
   - See [here for the initialization of the "Crypto Officer" role (on the client end)](https://thalesdocs.com/gphsm/luna/7/docs/network/Content/lunacm/commands/role/role_init.htm)
+
 - The "Crypto Officer" role password.
+
 - An handle to a private signing key within this partition, as provided when using the following kind of command (to be run on the client end, as an administrator/root user):
+
 ```
 cmu generateKeyPair -mech=pkcs -modulusBits=2048 -publicExp=65537
 ```
 
-On the client end, as an administrator/root user:
+On the client end, as a "Crypto Officer", get the PKC using the handle of the private key created at the previous step.
 
 ```
 cmu getpkc
 ```
 
-Client certificate requests can be generated on the client end, as an administrator/root user, using the following kind of command:
+A CSR can be created using the following command:
 
 ```
-vtl createCSR -n 192.168.10.12
+cmu requestcertificate -privatehandle=129 -publichandle=128 -C=CA -CN=test.com -E=test@test.com -L=Ottawa -O=Thales -OU=HSM -sha256withrsa -slot 0 -password userpin2 –outputfile=Test.CSR
 ```
 
 ## Build
@@ -67,18 +73,30 @@ java -jar luna-pkc-validator.jar --pkc <pkc-file> {--ca <ca-file> | --req <req-f
   --req  the Certificate Signing Request file.
 ```
 
+Note: "luna-pkc-validator.jar" may need to be replaced with "luna-pkc-validator-1.0.0-jar-with-dependencies.jar" according to the way the JAR archive is produced by your Maven project.
+
 ## Test
 
 Once the Luna root certificate (e.g. "safenet-root.pem") and a PKC file have been retrieved (e.g. "pkc.p7b"), the PKC can be checked with the following command:
+
+safenet-root.pem can be used for validating RSA keys PKC. ECC keys need to be validated by the ECC_Manufacturing_Integrity_certificate
+
+For RSA keys:
 
 ```
 java -jar target/luna-pkc-validator-1.0.0-jar-with-dependencies.jar --pkc ./pkc.p7b --ca ./safenet-root.pem
 ```
 
-A client certificate request (e.g. "192.168.10.12CSR.pem") can be checked with the following command:
+For ECC keys:
 
 ```
-java -jar target/luna-pkc-validator-1.0.0-jar-with-dependencies.jar --pkc ./pkc.p7b --req ./192.168.10.12CSR.pem
+java -jar target/luna-pkc-validator-1.0.0-jar-with-dependencies.jar --pkc ./pkc.p7b --ca ./ECC_Manufacturing_Integrity_certificate.cer
+```
+
+A client certificate request ("Test.CSR") can be checked with the following command:
+
+```
+java -jar target/luna-pkc-validator-1.0.0-jar-with-dependencies.jar --pkc ./pkc.p7b --req Test.CSR
 ```
 
 ## Contributing
