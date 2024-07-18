@@ -26,22 +26,27 @@ Luna PKCs can be retrieved using the [CMU](https://www.thalesdocs.com/gphsm/luna
 
 - The "Crypto Officer" role password.
 
-- An handle to a private signing key within this partition, as provided when using the following kind of command (to be run on the client end, as an administrator/root user):
+- An handle to a private signing key within this partition, as provided by the following kind of command (to be run on the client end, as an administrator/root user; select the slot that represents the existing initialized partition mentionned above if needed, and provide the "Crypto Officer" when requested):
 
+  - For a RSA key pair:
 ```
-cmu generateKeyPair -mech=pkcs -modulusBits=2048 -publicExp=65537
+cmu generateKeyPair -mech=pkcs -modulusBits=2048 -publicExp=65537 -sign=T -verify=T
+```
+  - For an ECC key pair:
+```
+cmu generateKeyPair -key ECDSA -curveType=3 -sign=T -verify=T
 ```
 
-On the client end, as a "Crypto Officer", get the PKC using the handle of the private key created at the previous step.
+On the client end, as a "Crypto Officer", get the PKC using the handle of the private key created at the previous step (select the slot that represents the existing initialized partition mentionned above if needed, as well as the "Crypto Officer" password, the handle that corresponds to the private key to use and the name of the output file [e.g. 'pkc.p7b'] when requested):
 
 ```
 cmu getpkc
 ```
 
-A CSR can be created using the following command:
+A CSR can be created using the following command (select the slot that represents the existing initialized partition mentionned above if needed, and provide the "Crypto Officer" password, as well as the handle that corresponds to the private key to use and the name of the output file [e.g. 'test.csr'] when requested):):
 
 ```
-cmu requestcertificate -privatehandle=129 -publichandle=128 -C=CA -CN=test.com -E=test@test.com -L=Ottawa -O=Thales -OU=HSM -sha256withrsa -slot 0 -password userpin2 –outputfile=Test.CSR
+cmu requestcertificate -C=CA -CN=test.com -E=test@test.com -L=Ottawa -O=Thales
 ```
 
 ## Build
@@ -73,30 +78,41 @@ java -jar luna-pkc-validator.jar --pkc <pkc-file> {--ca <ca-file> | --req <req-f
   --req  the Certificate Signing Request file.
 ```
 
-Note: "luna-pkc-validator.jar" may need to be replaced with "luna-pkc-validator-1.0.0-jar-with-dependencies.jar" according to the way the JAR archive is produced by your Maven project.
+Note: "luna-pkc-validator.jar" may need to be replaced with something like "luna-pkc-validator-1.0.0-jar-with-dependencies.jar" according to the way the JAR archive is produced by your Maven project.
 
 ## Test
 
-Once the Luna root certificate (e.g. "safenet-root.pem") and a PKC file have been retrieved (e.g. "pkc.p7b"), the PKC can be checked with the following command:
+### Check a PKC
 
-safenet-root.pem can be used for validating RSA keys PKC. ECC keys need to be validated by the ECC_Manufacturing_Integrity_certificate
+Once the Luna root certificate(s) and a PKC file have been retrieved (e.g. "pkc.p7b"), the PKC can be checked with the following command:
 
-For RSA keys:
-
-```
-java -jar target/luna-pkc-validator-1.0.0-jar-with-dependencies.jar --pkc ./pkc.p7b --ca ./safenet-root.pem
-```
-
-For ECC keys:
+- For RSA keys:
 
 ```
-java -jar target/luna-pkc-validator-1.0.0-jar-with-dependencies.jar --pkc ./pkc.p7b --ca ./ECC_Manufacturing_Integrity_certificate.cer
+java -jar target/luna-pkc-validator-1.0.0-jar-with-dependencies.jar --pkc ./tests/rsa-pkc.p7b --ca ./tests/luna-rsa-root-certificate.pem
 ```
 
-A client certificate request ("Test.CSR") can be checked with the following command:
+- For ECC keys:
 
 ```
-java -jar target/luna-pkc-validator-1.0.0-jar-with-dependencies.jar --pkc ./pkc.p7b --req Test.CSR
+java -jar target/luna-pkc-validator-1.0.0-jar-with-dependencies.jar --pkc ./tests/ecc-pkc.p7b --ca ./tests/luna-ecc-root-certificate.pem
+```
+
+### Check a CSR
+
+A client certificate request can be checked with the following command:
+
+- For RSA keys:
+
+```
+java -jar target/luna-pkc-validator-1.0.0-jar-with-dependencies.jar --pkc ./tests/rsa-pkc.p7b --req ./tests/rsa-test.csr
+
+```
+
+- For ECC keys:
+
+```
+java -jar target/luna-pkc-validator-1.0.0-jar-with-dependencies.jar --pkc ./tests/ecc-pkc.p7b --req ./tests/ecc-test.csr
 ```
 
 ## Contributing
