@@ -9,9 +9,17 @@
 
 package com.thalesgroup.luna.pkcv;
 
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.security.cert.Certificate;
+import java.security.cert.CertificateParsingException;
+import java.security.cert.X509Certificate;
+import java.util.Arrays;
 import java.util.List;
 
+import sun.security.util.DerInputStream;
+
+@SuppressWarnings("restriction")
 public final class PkcValidator {
 	private Certificate leaf;
 	private Certificate root;
@@ -97,4 +105,118 @@ public final class PkcValidator {
 			return false;
 		}
 	}
+
+	/**
+	 * Validate the Extended Key Usage for the PKC Chain.
+	 * 
+	 * @param pkc        chain ,
+	 * @param extensions of Luna Certificate chain
+	 * 
+	 * @return <code>true</code> if the pkc match the Luna extensions
+	 *         <code>false</code> if the pkc chain does not match the Luna
+	 *         extensions .
+	 * 
+	 */
+
+	public boolean validatePKCExtensions(final List<X509Certificate> certificates, String[] eku) {
+
+		for (int i = 0; i < certificates.size(); i++) {
+
+			try {
+				List<String> extendedKeyUsage = certificates.get(i).getExtendedKeyUsage();
+
+				if (extendedKeyUsage != null) {
+
+					for (String usage : extendedKeyUsage) {
+						if (usage.equals(eku[i]) == false) {
+							return false;
+						}
+
+					}
+
+				}
+
+			} catch (CertificateParsingException e1) {
+				// TODO Auto-generated catch block
+				e1.printStackTrace();
+			}
+
+		}
+
+		return true;
+	}
+
+	/**
+	 * Determine the serial number from pkc chain .
+	 *
+	 * @param leaf certificate from pkc chain chain.
+	 *
+	 * @return <code>true</code> if the version is available
+	 *         <code>false</code> otherwise, in the case of any exception.
+	 */
+
+	// @SuppressWarnings("restriction")
+	public boolean printSerialNumberofHSM(X509Certificate cert) {
+		byte[] extVal = cert.getExtensionValue("1.3.6.1.4.1.12383.2.1");
+		if (extVal != null) {
+			try {
+				// Strip the OCTET STRING wrapper
+				DerInputStream derIn = new DerInputStream(extVal);
+				byte[] extValue = derIn.getOctetString();
+				ByteBuffer bb = ByteBuffer.allocate(extValue.length);
+				bb.order(ByteOrder.LITTLE_ENDIAN);
+				bb.put(extValue);
+				bb.position(0);
+				System.out.println("PKC from HSM Serail number: " + bb.getInt());
+				return true;
+
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+		} else {
+			return false;
+		}
+		return false;
+
+	}
+
+	/**
+	 * Determine the firmware version from pkc chain .
+	 *
+	 * @param leaf certificate from pkc chain chain.
+	 *
+	 * @return <code>true</code> if the version is available
+	 *         <code>false</code> otherwise, in the case of any exception.
+	 *         printFirmwareVersion
+	 */
+
+	public static boolean printFirmwareVersion(X509Certificate cert) {
+		byte[] extVal = cert.getExtensionValue("1.3.6.1.4.1.12383.2.3");
+		if (extVal != null) {
+			try {
+				// Strip the OCTET STRING wrapper
+				DerInputStream derIn = new DerInputStream(extVal);
+				byte[] extValue = derIn.getOctetString();
+
+				ByteBuffer bb = ByteBuffer.allocate(2);
+				bb.order(ByteOrder.LITTLE_ENDIAN);
+				bb.put(Arrays.copyOfRange(extValue, 2, 3));
+				bb.position(0);
+				System.out.print("Firmware Version of the HSM " + bb.getShort());
+				bb.position(0);
+				bb.put(Arrays.copyOfRange(extValue, 0, 1));
+				bb.position(0);
+				System.out.println(bb.getShort());
+				return true;
+
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+		} else {
+			return false;
+		}
+		return false;
+
+	}
+
 }
